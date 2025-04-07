@@ -55,6 +55,47 @@ class AgentService {
       }
     }
 
+    async getAgentById(id: string) {
+        const response = await fetch(`${api.API}agents/${id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        return response.json();
+    }
+
+    async getAllAnnees() {
+        const response = await fetch(`${api.API}annees`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        return response.json();
+    }
+
+    async updateAnnee(id: string, data: any) {
+        const response = await fetch(`${api.API}annees/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        });
+        return response.json();
+    }
+
+    async createAnnee(data: any) {
+        const response = await fetch(`${api.API}annees`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        });
+        return response.json();
+    }
 }
 
 export default new AgentService();
