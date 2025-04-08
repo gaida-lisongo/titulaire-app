@@ -5,13 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Sign in",
+  title: "Connectez-vous à votre compte",
+  description: "Connectez-vous à votre compte pour accéder à toutes les fonctionnalités de l'application.",
 };
 
 export default function SignIn() {
   return (
     <>
-      <Breadcrumb pageName="Sign In" />
 
       <div className="rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
         <div className="flex flex-wrap items-center">

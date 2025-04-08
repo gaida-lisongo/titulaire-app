@@ -1,105 +1,126 @@
-import * as Icons from "../icons";
+import { 
+  faHome, 
+  faGraduationCap, 
+  faUserTie,
+  faClipboardList,
+  faUsers,
+  faClock,
+  faCalendarAlt,
+  faBookOpen,
+  faUserGraduate,
+  faFileAlt,
+  faChalkboardTeacher,
+  faTrophy,
+  faPencilAlt,
+  faCode,
+  faUserPlus,
+  faListAlt
+} from '@fortawesome/free-solid-svg-icons';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { useTitulaireStore } from '@/store/titulaireStore';
+import { url } from 'inspector';
+import { title } from 'process';
 
-export const NAV_DATA = [
+const { chargesHoraire } = useTitulaireStore((state) => state);
+
+interface NavItem {
+  title: string;
+  url?: string;
+  icon?: IconDefinition;
+  items?: NavItem[]; 
+}
+
+interface NavSection {
+  label?: string;
+  icon?: IconDefinition;
+  items: NavItem[];
+}
+
+const charges = () => {
+  let data = [] 
+
+  chargesHoraire.forEach((charges) => {
+    const items = charges.charges_horaires
+    let menuItem = {
+      label: charges.designation.toString().toUpperCase(),
+    }
+    let travaux = [];
+    let lecons = [];
+    let examens = [];
+    let rattrapages = [];
+
+    items.forEach((item) => {
+      travaux = item.travaux.map((travail, idx) => {
+        return {
+          title: `Travail ${idx + 1}`,
+          url: `/travaux/${travail}_${item.anneeId}`
+        }
+      })
+
+      lecons = item.lecons.map((lecon, idx) => {
+        return {
+          title: `Lecon ${idx + 1}`,
+          url: `/lecons/${lecon}_${item.anneeId}`
+        }
+      })
+
+      examens = item.examens.map((examen, idx) => {
+        return {
+          title: `Examen ${idx + 1}`,
+          url: `/examens/${examen}_${item.anneeId}`
+        }
+      })
+
+      rattrapages = item.rattrapages.map((rattrapage, idx) => {
+        return {
+          title: `Rattrapage ${idx + 1}`,
+          url: `/rattrapages/${rattrapage}_${item.anneeId}`
+        }
+      })
+    })
+
+    menuItem.items = [
+      {
+        title: 'Travaux',
+        icon: faClipboardList,
+        items: travaux
+      },
+      {
+        title: 'Lecons',
+        icon: faBookOpen,
+        items: lecons
+      },
+      {
+        title: 'Examens',
+        icon: faTrophy,
+        items: examens
+      },
+      {
+        title: 'Rattrapages',
+        icon: faUserPlus,
+        items: rattrapages
+      }
+    ];
+
+    data.push(menuItem);
+  });
+
+  return data;
+}
+
+const customMenu = charges();
+
+export const NAV_DATA: NavSection[] = [
   {
-    label: "MAIN MENU",
+    icon: faHome,
     items: [
       {
         title: "Dashboard",
-        icon: Icons.HomeIcon,
-        items: [
-          {
-            title: "eCommerce",
-            url: "/",
-          },
-        ],
-      },
-      {
-        title: "Calendar",
-        url: "/calendar",
-        icon: Icons.Calendar,
+        url: "/",
         items: [],
-      },
-      {
-        title: "Profile",
-        url: "/profile",
-        icon: Icons.User,
-        items: [],
-      },
-      {
-        title: "Forms",
-        icon: Icons.Alphabet,
-        items: [
-          {
-            title: "Form Elements",
-            url: "/forms/form-elements",
-          },
-          {
-            title: "Form Layout",
-            url: "/forms/form-layout",
-          },
-        ],
-      },
-      {
-        title: "Tables",
-        url: "/tables",
-        icon: Icons.Table,
-        items: [
-          {
-            title: "Tables",
-            url: "/tables",
-          },
-        ],
-      },
-      {
-        title: "Pages",
-        icon: Icons.Alphabet,
-        items: [
-          {
-            title: "Settings",
-            url: "/pages/settings",
-          },
-        ],
-      },
-    ],
+        icon: faHome,
+      }
+    ]
   },
-  {
-    label: "OTHERS",
-    items: [
-      {
-        title: "Charts",
-        icon: Icons.PieChart,
-        items: [
-          {
-            title: "Basic Chart",
-            url: "/charts/basic-chart",
-          },
-        ],
-      },
-      {
-        title: "UI Elements",
-        icon: Icons.FourCircle,
-        items: [
-          {
-            title: "Alerts",
-            url: "/ui-elements/alerts",
-          },
-          {
-            title: "Buttons",
-            url: "/ui-elements/buttons",
-          },
-        ],
-      },
-      {
-        title: "Authentication",
-        icon: Icons.Authentication,
-        items: [
-          {
-            title: "Sign In",
-            url: "/auth/sign-in",
-          },
-        ],
-      },
-    ],
-  },
+  ...customMenu
 ];

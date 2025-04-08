@@ -5,12 +5,13 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { NAV_DATA } from "./data";
+// import { NAV_DATA } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-export function Sidebar() {
+export function Sidebar({NAV_DATA}: { NAV_DATA: any[] }) {
   const pathname = usePathname();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -87,16 +88,22 @@ export function Sidebar() {
 
           {/* Navigation */}
           <div className="custom-scrollbar mt-6 flex-1 overflow-y-auto pr-3 min-[850px]:mt-10">
-            {NAV_DATA.map((section) => (
-              <div key={section.label} className="mb-6">
-                <h2 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">
-                  {section.label}
-                </h2>
+            {NAV_DATA.map((section, sectionIndex) => (
+              <div 
+                // Use index as fallback when label is not available
+                key={section.label || `section-${sectionIndex}`} 
+                className="mb-6"
+              >
+                {section.label && (
+                  <h2 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">
+                    {section.label}
+                  </h2>
+                )}
 
                 <nav role="navigation" aria-label={section.label}>
                   <ul className="space-y-2">
-                    {section.items.map((item) => (
-                      <li key={item.title}>
+                    {section.items.map((item, itemIndex) => (
+                      <li key={`${item.title}-${itemIndex}`}>
                         {item.items.length ? (
                           <div>
                             <MenuItem
@@ -105,10 +112,13 @@ export function Sidebar() {
                               )}
                               onClick={() => toggleExpanded(item.title)}
                             >
-                              <item.icon
-                                className="size-6 shrink-0"
-                                aria-hidden="true"
-                              />
+                              {item.icon && (
+                                <FontAwesomeIcon
+                                  icon={item.icon}
+                                  className="size-6 shrink-0"
+                                  aria-hidden="true"
+                                />
+                              )}
 
                               <span>{item.title}</span>
 
@@ -156,10 +166,13 @@ export function Sidebar() {
                                 href={href}
                                 isActive={pathname === href}
                               >
-                                <item.icon
-                                  className="size-6 shrink-0"
-                                  aria-hidden="true"
-                                />
+                                {item.icon && (
+                                  <FontAwesomeIcon
+                                    icon={item.icon}
+                                    className="size-6 shrink-0"
+                                    aria-hidden="true"
+                                  />
+                                )}
 
                                 <span>{item.title}</span>
                               </MenuItem>

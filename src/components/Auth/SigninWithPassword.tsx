@@ -52,29 +52,15 @@ export default function SigninWithPassword() {
     
     try {
       const response = await authService.login({ matricule: data.matricule });
-      
+      console.log(response);
       if (response.success) {
-        // Vérifier si l'agent existe dans les bureaux des sections
-        const userSections = allSections.filter(section => 
-          section.bureaux.some(bureau => bureau.agentId === response.data.agentId)
-        );
-
-        if (userSections.length === 0) {
-          setError("Accès refusé. Cette plateforme est réservée aux membres du bureau des sections.");
-          return;
-        }
-
-        // Stocker les sections de l'utilisateur dans le store
-        setSections(userSections);
         
-        // Définir la première section comme active
-        useSectionStore.getState().setActiveSection(userSections[0]._id);
-
         setData(prev => ({
           ...prev,
           agentId: response.data.agentId
         }));
         setStep('otp');
+
       } else {
         setError("Matricule invalide");
       }
