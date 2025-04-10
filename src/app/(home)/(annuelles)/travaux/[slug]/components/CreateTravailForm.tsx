@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTravauxContext } from '../../contexts/TravauxContext'
 import type { TravailType } from '../../contexts/TravauxContext'
+import { useAuthStore } from '@/store/useAuthStore'
 
 interface CreateTravailFormProps {
   slug: string
@@ -17,13 +18,16 @@ export function CreateTravailForm({ slug }: CreateTravailFormProps) {
     type: selectedType,
     matiereId: slug,
   })
+  const { agent } = useAuthStore()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!agent?.id) return
+    
     addTravail({
       ...formData,
       date_fin: new Date(formData.date_fin),
-      auteurId: 'current-user-id',
+      auteurId: agent?.id,
       statut: 'EN ATTENTE'
     })
   }

@@ -1,87 +1,217 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
-import { Travail, Question } from '@/types/travail'
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import { useAuthStore } from '@/store/useAuthStore'
+import TitulaireService from '@/api/titulaireService'
+import type { Travail, Question } from '@/types/travail'
+import agentService from '@/api/agentService'
+import titulaireService from '@/api/titulaireService'
 
 interface TravauxContextType {
   travaux: Travail[]
-  addTravail: (travail: Omit<Travail, '_id'>) => void
-  updateTravail: (id: string, updates: Partial<Travail>) => void
-  publishTravail: (id: string) => Promise<void>
-  addQuestions: (travailId: string, questions: Question[]) => void
+  isLoading: boolean
+  error: string | null
+  resolutions: any[]
+  addTravail: (travail: Omit<Travail, '_id'>) => Promise<void>
+  updateTravail: (id: string, updates: Partial<Travail>) => Promise<void>
+  deleteTravail: (id: string) => Promise<void>
+  addQuestions: (travailId: string, questions: Question[]) => Promise<void>
+  updateQuestion: (travailId: string, questionId: string, data: Partial<Question>) => Promise<void>
+  loadTravaux: (matiereId: string) => Promise<void>
+  saveQuestion: (file: File) => Promise<string>
+  getResolutions: (travailId: string) => Promise<any[]>
+  makeCote: (data : 
+    {
+        anneeId: string, 
+        etudiantId: string, 
+        matiereId: string, 
+        createdBy: string,
+        noteAnnuel?: number,
+        noteExamen?: number,
+        noteRattrapage?: number,
+    }) => Promise<void>
+  makeCorrection: (resolutionId: string, note: any) => Promise<void>
+  
 }
-
-const mockTravaux: Travail[] = [
-  {
-    _id: '1',
-    titre: 'Devoir de Programmation',
-    description: 'Créer une API REST avec Node.js',
-    matiereId: 'info101',
-    date_fin: new Date('2024-05-01'),
-    auteurId: 'prof1',
-    montant: 20,
-    statut: 'EN ATTENTE',
-    questions: [],
-    isPublished: false
-  }
-]
 
 const TravauxContext = createContext<TravauxContextType | null>(null)
 
 export function TravauxProvider({ children }: { children: ReactNode }) {
-  const [travaux, setTravaux] = useState<Travail[]>(mockTravaux)
+  const [travaux, setTravaux] = useState<Travail[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [resolutions, setResolutions] = useState<any[]>([])
+  const { agent } = useAuthStore()
 
-  const addTravail = (newTravail: Omit<Travail, '_id'>) => {
-    const travail: Travail = {
-      ...newTravail,
-      _id: crypto.randomUUID(),
-      date_created: new Date(),
-      questions: []
-    }
-    setTravaux(prev => [...prev, travail])
-  }
-
-  const updateTravail = (id: string, updates: Partial<Travail>) => {
-    setTravaux(prev => 
-      prev.map(travail => 
-        travail._id === id ? { ...travail, ...updates } : travail
-      )
-    )
-  }
-
-  const addQuestions = (travailId: string, questions: Question[]) => {
-    setTravaux(prev =>
-      prev.map(travail =>
-        travail._id === travailId
-          ? {
-              ...travail,
-              questions: questions.map(q => ({
-                ...q,
-                _id: crypto.randomUUID()
-              }))
-            }
-          : travail
-      )
-    )
-  }
-
-  const publishTravail = async (id: string) => {
-    const travail = travaux.find(t => t._id === id)
-    if (!travail) return
-
+  const loadTravaux = useCallback(async (matiereId: string) => {
+    if (!agent?.id) return
+    
     try {
-      // TODO: Appel API pour publier le travail
-      // const response = await fetch('/api/travaux', {
-      //   method: 'POST',
-      //   body: JSON.stringify(travail)
-      // })
+      setIsLoading(true)
+      setError(null)
+      const data = await TitulaireService.getAllTravauxByCharge(matiereId, agent.id)
+      console.log('Travaux chargés:', data)
       
-      setTravaux(prev =>
-        prev.map(t =>
-          t._id === id ? { ...t, isPublished: true } : t
+      // Les données sont déjà transformées par le service
+      setTravaux(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue')
+      console.error('Erreur lors du chargement des travaux:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [agent?.id])
+
+  const saveQuestion = async (file: File): Promise<string> => {
+    const imageUrl = await titulaireService.saveBlob(file, Date.now().toString());
+    console.log('Image URL:', imageUrl);
+    
+    if (imageUrl) {
+      return imageUrl;
+    } else {
+      throw new Error('Erreur lors du téléchargement de l\'image');
+    }
+  };
+
+  const addTravail = async (newTravail: Omit<Travail, '_id'>) => {
+    try {
+      setIsLoading(true)
+      const data = await TitulaireService.createTravail(newTravail)
+      console.log('Travail créé:', data)
+      setTravaux(prev => [...prev, data])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la création')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const updateTravail = async (id: string, updates: Travail) => {
+    try {
+      setIsLoading(true)
+      const data = await TitulaireService.updateTravail(id, updates)
+      console.log('Travail mis à jour:', data)
+      setTravaux(prev => 
+        prev.map(travail => 
+          travail._id === id ? { ...travail, ...data } : travail
         )
       )
-    } catch (error) {
-      console.error('Erreur lors de la publication:', error)
-      throw error
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la mise à jour')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const deleteTravail = async (id: string) => {
+    try {
+      setIsLoading(true)
+      await TitulaireService.deleteTravail(id)
+      setTravaux(prev => prev.filter(t => t._id !== id))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la suppression')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const addQuestions = async (travailId: string, questions: Question[]) => {
+    try {
+      setIsLoading(true)
+      // Create each question sequentially
+      for (const question of questions) {
+        await TitulaireService.createQuestion(question, travailId)
+      }
+      // Refresh travail data
+      const updatedTravail = await TitulaireService.updateTravail(travailId, {})
+      console.log('Questions ajoutées:', updatedTravail)
+      setTravaux(prev =>
+        prev.map(t =>
+          t._id === travailId ? updatedTravail : t
+        )
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de l\'ajout des questions')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const updateQuestion = async (travailId: string, questionId: string, data: Partial<Question>) => {
+    try {
+      setIsLoading(true)
+      await TitulaireService.updateQuestion(questionId, travailId, data)
+      // Refresh travail data to get updated questions
+      const updatedTravail = await TitulaireService.updateTravail(travailId, {})
+      console.log('Question mise à jour:', updatedTravail)
+      setTravaux(prev =>
+        prev.map(t =>
+          t._id === travailId ? updatedTravail : t
+        )
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la mise à jour de la question')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const makeCote = async (data: {
+    anneeId: string, 
+    etudiantId: string, 
+    matiereId: string, 
+    createdBy: string,
+    noteAnnuel?: number,
+    noteExamen?: number,
+    noteRattrapage?: number,
+  }) => {
+    try {
+      setIsLoading(true)
+      const response = await titulaireService.createNoteEtudiant(data)
+      console.log('Cote créée:', response)
+
+      return response;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la création de la cote')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const makeCorrection = async (resolutionId: string, cote : {note: number, comment: string}) => {
+    try {
+      setIsLoading(true)
+      const response = await titulaireService.updateResolution(resolutionId, cote)
+      console.log('Correction créée:', response)
+
+      return response;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la création de la correction')
+      throw err
+    }
+    finally {
+      setIsLoading(false)
+    }
+  }
+
+  const getResolutions = async (travailId: string) => {
+    try {
+      setIsLoading(true)
+      const data = await TitulaireService.getResolutionsByTravailId(travailId)
+      console.log('Résolutions chargées:', data)
+      if (data) {
+        setResolutions(data)
+      }
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des résolutions')
+      throw err
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -89,10 +219,19 @@ export function TravauxProvider({ children }: { children: ReactNode }) {
     <TravauxContext.Provider 
       value={{ 
         travaux, 
+        isLoading,
+        error,
+        resolutions: [], // Placeholder for resolutions, you can implement it later
         addTravail, 
         updateTravail,
-        publishTravail,
-        addQuestions
+        deleteTravail,
+        addQuestions,
+        updateQuestion,
+        loadTravaux,
+        saveQuestion,
+        makeCorrection,
+        makeCote,
+        getResolutions
       }}
     >
       {children}

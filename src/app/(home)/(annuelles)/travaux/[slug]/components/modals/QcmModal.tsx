@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { X, Plus, Save, Trash } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import type { Question } from '@/types/travail'
 
-// Import dynamique de l'éditeur mathématique
 const MathEditor = dynamic(() => import('@/components/shared/MathEditor'), {
   ssr: false
 })
@@ -14,61 +14,47 @@ interface QcmModalProps {
   totalQuestions: number
 }
 
-interface Question {
-  id: string
-  text: string
-  options: Array<{
-    id: string
-    text: string
-    isCorrect: boolean
-  }>
-}
-
 export function QcmModal({ isOpen, onClose, onSave, totalQuestions }: QcmModalProps) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestion, setCurrentQuestion] = useState<Question>({
-    id: crypto.randomUUID(),
-    text: '',
-    options: Array(7).fill('').map(() => ({
-      id: crypto.randomUUID(),
-      text: '',
-      isCorrect: false
-    }))
+    enonce: '',
+    type: 'QCM',
+    choix: Array(7).fill(''),
+    reponse: ''
   })
 
   const [showQuestionsList, setShowQuestionsList] = useState(false)
 
   const handleAddQuestion = () => {
-    if (currentQuestion.text.trim() && currentQuestion.options.some(opt => opt.text.trim())) {
-      setQuestions(prev => [...prev, currentQuestion])
+    if (currentQuestion.enonce && currentQuestion.choix?.some(c => c)) {
+      setQuestions(prev => 
+        [...prev, { ...currentQuestion }])
+      // Reset current question
       setCurrentQuestion({
-        id: crypto.randomUUID(),
-        text: '',
-        options: Array(7).fill('').map(() => ({
-          id: crypto.randomUUID(),
-          text: '',
-          isCorrect: false
-        }))
+        enonce: '',
+        type: 'QCM',
+        choix: Array(7).fill(''),
+        reponse: ''
       })
     }
   }
 
-  const handleDeleteQuestion = (questionId: string) => {
-    setQuestions(prev => prev.filter(q => q.id !== questionId))
+  const handleOptionChange = (index: number, value: string) => {
+    if (!currentQuestion.choix) return
+    
+    const newChoix = [...currentQuestion.choix]
+    newChoix[index] = value
+    setCurrentQuestion(prev => ({
+      ...prev,
+      choix: newChoix
+    }))
   }
 
-  const handleSave = () => {
-    const formattedQuestions: Question[] = questions.map(q => ({
-      enonce: q.text,
-      type: 'QCM',
-      choix: q.options.map(opt => opt.text).filter(Boolean),
-      reponse: q.options
-        .map((opt, index) => opt.isCorrect ? index.toString() : null)
-        .filter(Boolean)
-        .join(',')
+  const handleCorrectAnswer = (index: number) => {
+    setCurrentQuestion(prev => ({
+      ...prev,
+      reponse: index.toString()
     }))
-    
-    onSave(formattedQuestions)
   }
 
   if (!isOpen) return null
@@ -94,26 +80,32 @@ export function QcmModal({ isOpen, onClose, onSave, totalQuestions }: QcmModalPr
         </div>
 
         {showQuestionsList ? (
-          // Liste des questions déjà créées
           <div className="space-y-4">
             {questions.map((question, index) => (
-              <div key={question.id} className="border rounded-lg p-4">
+              <div key={index} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium">Question {index + 1}</h3>
                   <button
-                    onClick={() => handleDeleteQuestion(question.id)}
+                    onClick={() => {
+                      setQuestions(prev => prev.filter((_, i) => i !== index))
+                    }}
                     className="text-red-500 hover:text-red-700"
                   >
                     <Trash size={18} />
                   </button>
                 </div>
-                <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: question.text }} />
-                <div className="mt-2 space-y-1">
-                  {question.options.map((opt, i) => (
-                    opt.text && (
-                      <div key={opt.id} className="flex items-center gap-2">
-                        <input type="checkbox" checked={opt.isCorrect} readOnly />
-                        <span>{opt.text}</span>
+                <div className="prose max-w-none mb-4">{question.enonce}</div>
+                <div className="space-y-2">
+                  {question.choix?.map((choix, i) => (
+                    choix && (
+                      <div key={i} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={question.reponse === i.toString()}
+                          readOnly
+                          className="w-4 h-4"
+                        />
+                        <span>{choix}</span>
                       </div>
                     )
                   ))}
@@ -122,68 +114,54 @@ export function QcmModal({ isOpen, onClose, onSave, totalQuestions }: QcmModalPr
             ))}
           </div>
         ) : (
-          // Formulaire d'édition de question
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              {/* Éditeur de question */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Question {questions.length + 1}
-                </label>
-                <MathEditor
-                  value={currentQuestion.text}
-                  onChange={(value) => setCurrentQuestion(prev => ({ ...prev, text: value }))}
-                  className="min-h-[200px]"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Question {questions.length + 1}
+              </label>
+              <MathEditor
+                value={currentQuestion.enonce}
+                onChange={(value) => setCurrentQuestion(prev => ({ ...prev, enonce: value }))}
+                className="min-h-[200px]"
+              />
+            </div>
 
-              {/* Options de réponse */}
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Options de réponse
-                </label>
-                {currentQuestion.options.map((option, index) => (
-                  <div key={option.id} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={option.isCorrect}
-                      onChange={(e) => {
-                        const newOptions = [...currentQuestion.options]
-                        newOptions[index].isCorrect = e.target.checked
-                        setCurrentQuestion(prev => ({ ...prev, options: newOptions }))
-                      }}
-                      className="w-4 h-4"
-                    />
-                    <input
-                      type="text"
-                      value={option.text}
-                      onChange={(e) => {
-                        const newOptions = [...currentQuestion.options]
-                        newOptions[index].text = e.target.value
-                        setCurrentQuestion(prev => ({ ...prev, options: newOptions }))
-                      }}
-                      className="flex-1 p-2 border rounded-lg"
-                      placeholder={`Option ${index + 1}`}
-                    />
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Options de réponse
+              </label>
+              {currentQuestion.choix?.map((choix, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={currentQuestion.reponse === index.toString()}
+                    onChange={() => handleCorrectAnswer(index)}
+                    className="w-4 h-4"
+                  />
+                  <input
+                    type="text"
+                    value={choix}
+                    onChange={(e) => handleOptionChange(index, e.target.value)}
+                    className="flex-1 p-2 border rounded-lg"
+                    placeholder={`Option ${index + 1}`}
+                  />
+                </div>
+              ))}
             </div>
 
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleAddQuestion}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                disabled={!currentQuestion.text || currentQuestion.options.every(opt => !opt.text)}
+                disabled={!currentQuestion.enonce || !currentQuestion.choix?.some(c => c)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
               >
                 <Plus size={20} />
                 Ajouter cette question
               </button>
-
+              
               <button
-                onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                disabled={questions.length !== totalQuestions}
+                onClick={() => onSave(questions)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 <Save size={20} />
                 Enregistrer le QCM

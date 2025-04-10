@@ -1,15 +1,37 @@
-import { useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { X, Upload, File } from 'lucide-react'
+import { useTravauxContext } from '../../../contexts/TravauxContext'
+import { cn } from '@/lib/utils'
+import { fi } from 'date-fns/locale'
 
 interface ReponseModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (file: File) => void
+  onSave: (url: string) => void
 }
 
 export function ReponseModal({ isOpen, onClose, onSave }: ReponseModalProps) {
   const [file, setFile] = useState<File | null>(null)
+  const [url, setUrl] = useState<string | null>(null)
+  const { saveQuestion } = useTravauxContext()
 
+  const fetchUrl = async () => {
+    if (file) {
+      const imageUrl = await saveQuestion(file as File)
+      const url = await imageUrl.toString();
+
+      console.log('Image URL:', url)
+      if (imageUrl) {
+        setUrl(imageUrl)
+        onSave(url)
+        onClose()
+      } else {
+        console.error('Erreur lors du téléchargement de l\'image')
+      }
+    }
+  }
+
+  
   if (!isOpen) return null
 
   return (
@@ -49,7 +71,7 @@ export function ReponseModal({ isOpen, onClose, onSave }: ReponseModalProps) {
             Annuler
           </button>
           <button
-            onClick={() => file && onSave(file)}
+            onClick={() => fetchUrl()}
             disabled={!file}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >

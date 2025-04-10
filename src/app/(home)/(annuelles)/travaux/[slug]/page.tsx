@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, useEffect, use } from 'react'
 import { TravailBanner } from './components/TravailBanner'
 import { TravailCard } from './components/TravailCard'
 import { CreateTravailForm } from './components/CreateTravailForm'
@@ -10,49 +10,29 @@ import { ReponseModal } from './components/modals/ReponseModal'
 import { useTravauxContext } from '../contexts/TravauxContext'
 import type { Travail, Question } from '@/types/travail'
 
-export default function TravauxPage({ params }: { params: Promise<{ slug: string }> }) {
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
+
+export default function TravauxPage({ params }: PageProps) {
   const resolvedParams = use(params)
-  const { travaux, updateTravail } = useTravauxContext()
+  const { travaux, isLoading, error, updateTravail, loadTravaux } = useTravauxContext()
   
   const [selectedTravail, setSelectedTravail] = useState<Travail | null>(null)
   const [isQcmModalOpen, setIsQcmModalOpen] = useState(false)
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false)
   const [isReponseModalOpen, setIsReponseModalOpen] = useState(false)
 
-  const handleSaveQcm = (questions: Question[]) => {
-    if (selectedTravail) {
-      updateTravail(selectedTravail._id!, { questions })
-      setIsQcmModalOpen(false)
-      setSelectedTravail(null)
+  console.log('Travaux:', travaux)
+  useEffect(() => {
+    const [matiereId] = resolvedParams.slug.split('_')
+    if (matiereId) {
+      loadTravaux(matiereId)
     }
-  }
-
-  const handleSaveQuestion = (enonce: string) => {
-    if (selectedTravail) {
-      const question: Question = {
-        enonce,
-        type: 'LIBRE'
-      }
-      updateTravail(selectedTravail._id!, { questions: [question] })
-      setIsQuestionModalOpen(false)
-      setSelectedTravail(null)
-    }
-  }
-
-  const handleSaveReponse = (url: string) => {
-    if (selectedTravail) {
-      const question: Question = {
-        enonce: "Fichier à rendre",
-        type: 'FICHIER',
-        url
-      }
-      updateTravail(selectedTravail._id!, { questions: [question] })
-      setIsReponseModalOpen(false)
-      setSelectedTravail(null)
-    }
-  }
+  }, [resolvedParams.slug, loadTravaux])
 
   const handleEditTravail = (travail: Travail) => {
+    console.log('Selected travail:', travail)
     setSelectedTravail(travail)
     switch (travail.type) {
       case 'QCM':
@@ -67,6 +47,17 @@ export default function TravauxPage({ params }: { params: Promise<{ slug: string
     }
   }
 
+  // Extraire matiereId et anneeId du slug
+  const [matiereId, anneeId] = resolvedParams.slug.split('_')
+
+  if (isLoading) {
+    return <div>Chargement...</div>
+  }
+
+  if (error) {
+    return <div>Erreur: {error}</div>
+  }
+
   return (
     <div className="space-y-8">
       <TravailBanner slug={resolvedParams.slug} />
@@ -79,13 +70,14 @@ export default function TravauxPage({ params }: { params: Promise<{ slug: string
                 key={travail._id}
                 travail={travail}
                 onEdit={() => handleEditTravail(travail)}
+                anneeId={anneeId} // Passer anneeId ici
               />
             ))}
           </div>
         </div>
 
         <div className="col-span-12 lg:col-span-4">
-          <CreateTravailForm slug={resolvedParams.slug} />
+          <CreateTravailForm slug={matiereId} />
         </div>
       </div>
 
@@ -95,7 +87,13 @@ export default function TravauxPage({ params }: { params: Promise<{ slug: string
           setIsQcmModalOpen(false)
           setSelectedTravail(null)
         }}
-        onSave={handleSaveQcm}
+        onSave={(questions) => {
+          if (selectedTravail?._id) {
+            updateTravail(selectedTravail._id, { questions })
+            setIsQcmModalOpen(false)
+            setSelectedTravail(null)
+          }
+        }}
         totalQuestions={selectedTravail?.nombreQuestions || 0}
       />
 
@@ -105,8 +103,16 @@ export default function TravauxPage({ params }: { params: Promise<{ slug: string
           setIsQuestionModalOpen(false)
           setSelectedTravail(null)
         }}
-        onSave={handleSaveQuestion}
+        onSave={(enonce) => {
+          if (selectedTravail?._id) {
+            updateTravail(selectedTravail._id, { questions: enonce })
+            setIsQuestionModalOpen(false)
+            setSelectedTravail(null)
+          }
+        }}
         initialQuestion={selectedTravail?.questions[0]?.enonce}
+        totalQuestions={selectedTravail?.questions.length || 0}
+        lastQuestions={selectedTravail?.questions}
       />
 
       <ReponseModal
@@ -115,7 +121,24 @@ export default function TravauxPage({ params }: { params: Promise<{ slug: string
           setIsReponseModalOpen(false)
           setSelectedTravail(null)
         }}
-        onSave={handleSaveReponse}
+        onSave={(url) => {
+          console.log('URL:', url)
+          if (selectedTravail?._id) {
+            const payload = {
+              ...selectedTravail,
+              questions: [
+                {
+                  url: url
+                }
+              ]
+            }
+
+            console.log('Payload:', payload)
+            updateTravail(selectedTravail._id, payload)
+            setIsReponseModalOpen(false)
+            setSelectedTravail(null)
+          }
+        }}
       />
     </div>
   )

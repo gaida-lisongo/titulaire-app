@@ -10,18 +10,45 @@ export interface Question {
   url?: string
 }
 
+export interface Matiere {
+  designation: string
+  code: string
+}
+
 export interface Travail {
   _id?: string
   titre: string
   description: string
   type: TravailType
   matiereId: string
+  matiere?: Matiere
   date_created?: Date
   date_fin: Date
   auteurId: string
   montant: number
   statut: TravailStatus
   questions: Question[]
+  createdAt?: Date
+  updatedAt?: Date
   nombreQuestions?: number
   isPublished?: boolean
+}
+
+export interface Etudiant {
+  _id: string
+  matricule: string
+  nom: string
+}
+
+export interface Reponse {
+  _id: string
+  etudiantId: string
+  etudiant: Etudiant
+  travailId: string
+  dateSubmission: Date
+  note?: number
+  reponses: {
+    questionId: string
+    contenu: string
+  }[]
 }
