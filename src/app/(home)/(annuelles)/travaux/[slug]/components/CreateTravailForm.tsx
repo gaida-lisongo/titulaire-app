@@ -1,6 +1,7 @@
+export type TravailType = 'QCM' | 'QUESTION' | 'REPONSE'
+
 import { useState } from 'react'
 import { useTravauxContext } from '../../contexts/TravauxContext'
-import type { TravailType } from '../../contexts/TravauxContext'
 import { useAuthStore } from '@/store/useAuthStore'
 
 interface CreateTravailFormProps {
@@ -28,7 +29,8 @@ export function CreateTravailForm({ slug }: CreateTravailFormProps) {
       ...formData,
       date_fin: new Date(formData.date_fin),
       auteurId: agent?.id,
-      statut: 'EN ATTENTE'
+      statut: 'EN ATTENTE',
+      questions: []
     })
   }
 

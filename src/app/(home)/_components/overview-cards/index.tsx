@@ -52,36 +52,37 @@ export function OverviewCardsGroup() {
         label="Total Promotions"
         data={{
           value: compactFormat(metrics.totalPromotions),
+          growthRate: 0,
           trend: 0,
           trending: "up",
         }}
         Icon={icons.Product}
       />
-
       <OverviewCard
         label="Promotions Actives"
         data={{
           value: compactFormat(metrics.activePromotions),
+          growthRate: (metrics.activePromotions / metrics.totalPromotions) * 100,
           trend: (metrics.activePromotions / metrics.totalPromotions) * 100,
           trending: "up",
         }}
         Icon={icons.Users}
       />
-
       <OverviewCard
         label="Total Unités"
         data={{
           value: compactFormat(metrics.totalUnites),
+          growthRate: 0,
           trend: 0,
           trending: "up",
         }}
         Icon={icons.Views}
       />
-
       <OverviewCard
         label="Total Matières"
         data={{
           value: compactFormat(metrics.totalMatieres),
+          growthRate: (metrics.totalMatieres / metrics.totalUnites) || 0,
           trend: (metrics.totalMatieres / metrics.totalUnites) || 0,
           trending: "up",
         }}

@@ -5,6 +5,8 @@ import { formatDate } from '@/utils/formatDate'
 import { useTravauxContext } from '../../contexts/TravauxContext'
 import type { Travail } from '@/types/travail'
 
+type TravailStatus = 'EN ATTENTE' | 'EN COURS' | 'TERMINE'
+
 interface TravailCardProps {
   travail: Travail
   onEdit: () => void
@@ -131,7 +133,7 @@ export function TravailCard({ travail, onEdit, anneeId }: TravailCardProps) {
               <select
                 value={travail.statut}
                 onChange={async (e) => {
-                  const newStatus = e.target.value;
+                  const newStatus = e.target.value as TravailStatus;
                   const payload = { ...travail, statut: newStatus };
 
                   console.log('Payload:', payload);

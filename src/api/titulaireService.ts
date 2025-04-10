@@ -5,13 +5,25 @@ import { put } from "@vercel/blob";
 interface ApiResponse<T> {
   success: boolean
   count: number
-  data: T
+  data: T,
+  message?: string
 }
 
 interface MatiereInfo {
   _id: string
   designation: string
   code: string
+}
+
+interface Travail {
+  _id: string
+  title: string
+  description: string
+  dateDebut: Date
+  dateFin: Date
+  matiereId: string
+  auteurId: string
+  questions?: any[]
 }
 
 interface TravailResponse extends Omit<Travail, 'matiereId'> {

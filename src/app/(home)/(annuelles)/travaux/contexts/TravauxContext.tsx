@@ -10,6 +10,8 @@ interface TravauxContextType {
   isLoading: boolean
   error: string | null
   resolutions: any[]
+  searchQuery: string // Ajout de la propriété searchQuery
+  setSearchQuery: (query: string) => void // Ajout de la fonction setter
   addTravail: (travail: Omit<Travail, '_id'>) => Promise<void>
   updateTravail: (id: string, updates: Partial<Travail>) => Promise<void>
   deleteTravail: (id: string) => Promise<void>
@@ -39,6 +41,7 @@ export function TravauxProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [resolutions, setResolutions] = useState<any[]>([])
+  const [searchQuery, setSearchQuery] = useState<string>('') // Ajout de l'état pour la recherche
   const { agent } = useAuthStore()
 
   const loadTravaux = useCallback(async (matiereId: string) => {
@@ -50,8 +53,24 @@ export function TravauxProvider({ children }: { children: ReactNode }) {
       const data = await TitulaireService.getAllTravauxByCharge(matiereId, agent.id)
       console.log('Travaux chargés:', data)
       
-      // Les données sont déjà transformées par le service
-      setTravaux(data)
+      // Transformer les données pour correspondre au type Travail
+      const transformedData = data.map((item: any) => ({
+        _id: item._id,
+        titre: item.title || item.titre, // Utiliser title s'il existe, sinon titre
+        description: item.description,
+        date_fin: item.dateFin || item.date_fin,
+        date_created: item.dateDebut || item.date_created,
+        matiereId: item.matiereId,
+        matiere: item.matiere,
+        auteurId: item.auteurId,
+        questions: item.questions || [],
+        montant: item.montant || 0,
+        type: item.type || 'QUESTION',
+        statut: item.statut || 'EN ATTENTE',
+        isPublished: item.isPublished || false
+      }));
+      
+      setTravaux(transformedData)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue')
       console.error('Erreur lors du chargement des travaux:', err)
@@ -85,7 +104,7 @@ export function TravauxProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const updateTravail = async (id: string, updates: Travail) => {
+  const updateTravail = async (id: string, updates: Partial<Travail>) => {
     try {
       setIsLoading(true)
       const data = await TitulaireService.updateTravail(id, updates)
@@ -215,25 +234,27 @@ export function TravauxProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const contextValue = {
+    travaux,
+    isLoading,
+    error,
+    resolutions,
+    searchQuery,
+    setSearchQuery,
+    addTravail,
+    updateTravail,
+    deleteTravail,
+    addQuestions,
+    updateQuestion,
+    loadTravaux,
+    saveQuestion,
+    getResolutions,
+    makeCote,
+    makeCorrection
+  }
+  
   return (
-    <TravauxContext.Provider 
-      value={{ 
-        travaux, 
-        isLoading,
-        error,
-        resolutions: [], // Placeholder for resolutions, you can implement it later
-        addTravail, 
-        updateTravail,
-        deleteTravail,
-        addQuestions,
-        updateQuestion,
-        loadTravaux,
-        saveQuestion,
-        makeCorrection,
-        makeCote,
-        getResolutions
-      }}
-    >
+    <TravauxContext.Provider value={contextValue}>
       {children}
     </TravauxContext.Provider>
   )

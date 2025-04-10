@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useTravauxContext } from '../../contexts/TravauxContext'
 import { Clock, Calendar, DollarSign } from 'lucide-react'
 
@@ -42,16 +43,31 @@ function TravailCard({ travail, onClick }: TravailCardProps) {
 }
 
 export function TravailList({ slug, onTravailClick }: { slug: string, onTravailClick: (travail: any) => void }) {
-  const { filteredTravaux, isLoading, searchQuery } = useTravauxContext()
+  const { travaux, isLoading, searchQuery } = useTravauxContext()
+  
+  // Calculer les travaux filtrés à l'intérieur du composant plutôt que de les récupérer du contexte
+  const filteredTravaux = useMemo(() => {
+    if (!searchQuery || !travaux) return travaux || []
+    
+    return travaux.filter(travail => {
+      const titre = travail.titre?.toLowerCase() || ''
+      const description = travail.description?.toLowerCase() || ''
+      const query = searchQuery.toLowerCase()
+      
+      return titre.includes(query) || description.includes(query)
+    })
+  }, [travaux, searchQuery])
 
   if (isLoading) {
     return <div>Chargement...</div>
   }
 
-  if (filteredTravaux.length === 0 && searchQuery) {
+  if (!filteredTravaux || filteredTravaux.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        Aucun travail ne correspond à votre recherche
+        {searchQuery 
+          ? "Aucun travail ne correspond à votre recherche"
+          : "Aucun travail disponible pour le moment"}
       </div>
     )
   }
@@ -60,7 +76,7 @@ export function TravailList({ slug, onTravailClick }: { slug: string, onTravailC
     <div className="space-y-6">
       {filteredTravaux.map((travail) => (
         <TravailCard
-          key={travail.id}
+          key={travail._id} // Utiliser _id ou id en fonction de ce qui est disponible
           travail={travail}
           onClick={() => onTravailClick(travail)}
         />

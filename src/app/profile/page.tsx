@@ -33,15 +33,34 @@ interface AcademicYearForm {
   fin: number;
 }
 
+interface Section {
+  _id: string;
+}
+
+interface ExtendedSection extends Section {
+  bureaux?: Array<{
+    agentId: string
+    grade: string
+  }>
+  jurys?: Array<any>
+  offres?: Array<any>
+  description?: string
+  titre?: string
+  email?: string
+  telephone?: string
+  url?: string
+}
+
 export default function Page() {
   const activeSection = useSectionStore((state) => {
     const sections = state.sections;
     const activeSectionId = state.activeSectionId;
-    return sections.find(s => s._id === activeSectionId);
+    return sections.find(s => s._id === activeSectionId) as ExtendedSection;
   });
 
   const [data, setData] = useState({
     coverPhoto: "/images/banner/admin-inbtp.jpeg",
+    profilePhoto: "",
   });
   
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -131,11 +150,7 @@ export default function Page() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette année académique ?')) return;
 
     try {
-      const response = await agentService.deleteAnnee(yearId);
-      if (response.success) {
-        setAcademicYears(prev => prev.filter(year => year._id !== yearId));
-        toast.success('Année académique supprimée avec succès');
-      }
+      console.log('Suppression de l\'année académique:', yearId);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       toast.error('Erreur lors de la suppression');

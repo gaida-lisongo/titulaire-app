@@ -3,7 +3,7 @@ import { Dialog } from '@headlessui/react';
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner } from '@fortawesome/free-solid-svg-icons';
-import { PromotionInput } from '@/types/promotion';
+import { PromotionInput, Promotion } from '@/types/promotion';
 import { useSectionStore } from '@/store/useSectionStore';
 
 interface Props {

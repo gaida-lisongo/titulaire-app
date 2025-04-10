@@ -63,7 +63,7 @@ export function UnitDistribution({ className }: PropsType) {
 
         <div>
           <dt className="text-xl font-bold text-dark dark:text-white">
-            {standardFormat(averageUnites, 1)}
+            {averageUnites.toFixed(1)}
           </dt>
           <dd className="font-medium dark:text-dark-6">Moyenne par Promotion</dd>
         </div>

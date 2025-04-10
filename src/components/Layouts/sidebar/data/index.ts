@@ -17,11 +17,6 @@ import {
   faListAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { useTitulaireStore } from '@/store/titulaireStore';
-import { url } from 'inspector';
-import { title } from 'process';
-
-const { chargesHoraire } = useTitulaireStore((state) => state);
 
 interface NavItem {
   title: string;
@@ -36,18 +31,30 @@ interface NavSection {
   items: NavItem[];
 }
 
-const charges = () => {
-  let data = [] 
+// Fonction qui prend les charges horaires en paramètre au lieu de les récupérer directement via useTitulaireStore
+interface ChargeHoraire {
+  designation: string;
+  charges_horaires: Array<{
+    anneeId: string;
+    travaux: string[];
+    lecons: string[];
+    examens: string[];
+    rattrapages: string[];
+  }>;
+}
+
+export const generateMenuFromCharges = (chargesHoraire: ChargeHoraire[] = []) => {
+  let data: NavSection[] = [];
 
   chargesHoraire.forEach((charges) => {
     const items = charges.charges_horaires
-    let menuItem = {
+    let menuItem: any = {
       label: charges.designation.toString().toUpperCase(),
     }
-    let travaux = [];
-    let lecons = [];
-    let examens = [];
-    let rattrapages = [];
+    let travaux: NavItem[] = [];
+    let lecons: NavItem[] = [];
+    let examens: NavItem[] = [];
+    let rattrapages: NavItem[] = [];
 
     items.forEach((item) => {
       travaux = item.travaux.map((travail, idx) => {
@@ -108,9 +115,8 @@ const charges = () => {
   return data;
 }
 
-const customMenu = charges();
-
-export const NAV_DATA: NavSection[] = [
+// Menu par défaut qui sera enrichi dans le composant qui utilise ce module
+export const DEFAULT_NAV_DATA: NavSection[] = [
   {
     icon: faHome,
     items: [
@@ -121,6 +127,14 @@ export const NAV_DATA: NavSection[] = [
         icon: faHome,
       }
     ]
-  },
-  ...customMenu
+  }
 ];
+
+// Fonction pour créer le menu complet avec les données dynamiques
+export const createFullNavData = (chargesHoraire = []) => {
+  const customMenu = generateMenuFromCharges(chargesHoraire);
+  return [
+    ...DEFAULT_NAV_DATA,
+    ...customMenu
+  ];
+};

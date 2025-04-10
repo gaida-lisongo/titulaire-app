@@ -16,6 +16,12 @@ interface QuestionModalProps {
   lastQuestions?: Question[] | []
 }
 
+// Interface locale pour garantir que l'énoncé est toujours une chaîne
+interface LocalQuestion {
+  enonce: string; // Jamais undefined
+  type: 'QUESTION';
+}
+
 export function QuestionModal({ 
   isOpen, 
   onClose, 
@@ -24,15 +30,15 @@ export function QuestionModal({
   totalQuestions = 1,
   lastQuestions
 }: QuestionModalProps) {
-  const [questions, setQuestions] = useState<Question[]>([])
+  const [questions, setQuestions] = useState<LocalQuestion[]>([])
   const [currentQuestion, setCurrentQuestion] = useState<string>(initialQuestion)
   const [showQuestionsList, setShowQuestionsList] = useState(false)
-  console.log('Questions:', questions)
 
   const handleAddQuestion = () => {
     if (currentQuestion.trim()) {
-      const newQuestion: Question = {
-        enonce: currentQuestion
+      const newQuestion: LocalQuestion = {
+        enonce: currentQuestion,
+        type: 'QUESTION'
       }
       setQuestions(prev => [...prev, newQuestion])
       setCurrentQuestion('')
@@ -45,16 +51,22 @@ export function QuestionModal({
 
   const handleSaveAll = () => {
     if (onSave && questions.length > 0) {
-      onSave(questions)
+      // Conversion du type LocalQuestion vers Question lors de la sauvegarde
+      onSave(questions as unknown as Question[])
       onClose()
     }
   }
 
   useEffect(() => {
     if (lastQuestions && lastQuestions.length > 0) {
-      setQuestions(lastQuestions)
+      // Conversion des questions existantes pour garantir que enonce est une chaîne
+      const convertedQuestions = lastQuestions.map(q => ({
+        enonce: q.enonce || '', // Fournir une chaîne vide comme fallback
+        type: 'QUESTION' as const
+      }));
+      setQuestions(convertedQuestions);
     }
-  }, [questions])
+  }, [lastQuestions]) // Modifier la dépendance pour éviter la boucle infinie
 
   if (!isOpen) return null
 
@@ -80,9 +92,7 @@ export function QuestionModal({
 
         {showQuestionsList ? (
           <div className="space-y-4">
-            {questions.map((q, index) => {
-              console.log('Question:', q)
-              return (
+            {questions.map((q, index) => (
               <div key={index} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium">Question {index + 1}</h3>
@@ -93,9 +103,12 @@ export function QuestionModal({
                     <Trash size={18} />
                   </button>
                 </div>
-                <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: q.enonce }} />
+                <div 
+                  className="prose max-w-none" 
+                  dangerouslySetInnerHTML={{ __html: q.enonce }} // q.enonce est maintenant toujours une chaîne
+                />
               </div>
-            )})}
+            ))}
           </div>
         ) : (
           <>

@@ -46,7 +46,7 @@ export function UploadPhotoForm() {
   const handleDelete = async () => {
     try {
       await updateUserInfo({
-        avatar: null
+        avatar: ""
       });
       toast.success("Photo de profil supprimée");
     } catch (error) {

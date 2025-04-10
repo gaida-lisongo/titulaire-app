@@ -116,3 +116,6 @@ export function RetraitsCard({ className }: { className?: string }) {
     </div>
   );
 }
+
+// Ou ajoutez une exportation nommée additionnelle
+export { RetraitsCard as ChatsCard };

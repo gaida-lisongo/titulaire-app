@@ -3,42 +3,65 @@ import { Dialog } from '@headlessui/react';
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner } from '@fortawesome/free-solid-svg-icons';
+// Ajoutez cette ligne pour importer toast
+import { toast } from 'react-hot-toast';
+
+interface UEInput {
+  designation: string;
+  code: string;
+  description: string;
+  filiere: string;
+  credits: number;
+  promotionId: string;
+}
 
 interface UE {
-  _id: string;
-  code: string;
+  _id?: string;
   designation: string;
-  categorie: string;
+  code: string;
+  description: string;
+  filiere: string;
+  credits: number;
+  promotionId: string;
 }
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<UE, '_id'>) => Promise<void>;
-  ue?: UE | null;
-  promotionId: string;
+  onSubmit: (data: UEInput) => Promise<void>;
+  ue?: UE;
 }
 
-export function UEModal({ isOpen, onClose, onSubmit, ue, promotionId }: Props) {
-  const [form, setForm] = useState({
-    code: '',
+export function UEModal({ isOpen, onClose, onSubmit, ue }: Props) {
+  const [form, setForm] = useState<UEInput>({
     designation: '',
-    categorie: ''
+    code: '',
+    description: '',
+    filiere: '',
+    credits: 0,
+    promotionId: ''
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (ue) {
       setForm({
-        code: ue.code,
         designation: ue.designation,
-        categorie: ue.categorie
+        code: ue.code,
+        description: ue.description,
+        filiere: ue.filiere,
+        credits: ue.credits,
+        promotionId: ue.promotionId
       });
     } else {
+      // Reset form when creating new
       setForm({
-        code: '',
         designation: '',
-        categorie: ''
+        code: '',
+        description: '',
+        filiere: '',
+        credits: 0,
+        promotionId: ''
       });
     }
   }, [ue]);
@@ -47,19 +70,7 @@ export function UEModal({ isOpen, onClose, onSubmit, ue, promotionId }: Props) {
     e.preventDefault();
     setLoading(true);
     try {
-      // S'assurer que tous les champs sont présents
-      const submitData = {
-        code: form.code.trim(),
-        designation: form.designation.trim(),
-        categorie: form.categorie
-      };
-
-      // Vérifier que tous les champs requis sont remplis
-      if (!submitData.code || !submitData.designation || !submitData.categorie) {
-        throw new Error('Tous les champs sont obligatoires');
-      }
-
-      await onSubmit(submitData);
+      await onSubmit(form);
       onClose();
     } catch (error) {
       console.error('Error:', error);
@@ -108,20 +119,40 @@ export function UEModal({ isOpen, onClose, onSubmit, ue, promotionId }: Props) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Catégorie
+                Description
               </label>
-              <select
-                value={form.categorie}
-                onChange={e => setForm(prev => ({ ...prev, categorie: e.target.value }))}
+              <textarea
+                value={form.description}
+                onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
                 className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 focus:border-primary dark:border-dark-3"
                 required
-              >
-                <option value="">Sélectionner une catégorie</option>
-                <option value="A">Fondamentale</option>
-                <option value="B">Complémentaire</option>
-                <option value="C">Méthodologie</option>
-                <option value="D">Transversale</option>
-              </select>
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Filière
+              </label>
+              <input
+                type="text"
+                value={form.filiere}
+                onChange={e => setForm(prev => ({ ...prev, filiere: e.target.value }))}
+                className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 focus:border-primary dark:border-dark-3"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Crédits
+              </label>
+              <input
+                type="number"
+                value={form.credits}
+                onChange={e => setForm(prev => ({ ...prev, credits: Number(e.target.value) }))}
+                className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 focus:border-primary dark:border-dark-3"
+                required
+              />
             </div>
 
             <div className="flex justify-end gap-3 mt-6">

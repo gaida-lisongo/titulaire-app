@@ -52,32 +52,3 @@ export function ResolutionHeader({ travail, resolutionsCount = 0 }: ResolutionHe
     </div>
   )
 }
-
-// Fonction de notation
-const handleNoter = async (note: number, comment: string, resolutionId: string) => {
-  try {
-    setIsLoading(true)
-    // Appeler l'API pour enregistrer la note
-    await TitulaireService.setCoteResolution(resolutionId, { 
-      note, 
-      comment 
-    })
-    
-    // Mettre à jour l'état local
-    setResolutions(prev => 
-      prev.map(res => 
-        res._id === resolutionId 
-          ? { ...res, note, commentaire: comment } 
-          : res
-      )
-    )
-    
-    // Fermer la modal
-    setIsModalOpen(false)
-    setSelectedStudent(null)
-  } catch (error) {
-    console.error('Erreur lors de la notation:', error)
-  } finally {
-    setIsLoading(false)
-  }
-}

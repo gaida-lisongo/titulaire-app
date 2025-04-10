@@ -11,6 +11,27 @@ import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
+interface SubItem {
+  title: string;
+  url: string;
+}
+
+interface NavItem {
+  title: string;
+  icon?: any; // You might want to be more specific with the icon type from FontAwesome
+  url?: string;
+  items: SubItem[];
+}
+
+interface MenuItemProps {
+  as?: 'link';
+  href?: string;
+  isActive?: boolean;
+  onClick?: () => void;
+  className?: string;
+  children: React.ReactNode;
+}
+
 export function Sidebar({NAV_DATA}: { NAV_DATA: any[] }) {
   const pathname = usePathname();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
@@ -28,20 +49,24 @@ export function Sidebar({NAV_DATA}: { NAV_DATA: any[] }) {
   useEffect(() => {
     // Keep collapsible open, when it's subpage is active
     NAV_DATA.some((section) => {
-      return section.items.some((item) => {
-        return item.items.some((subItem) => {
-          if (subItem.url === pathname) {
-            if (!expandedItems.includes(item.title)) {
-              toggleExpanded(item.title);
-            }
+      interface SubItem {
+        title: string;
+        url: string;
+      }
 
-            // Break the loop
-            return true;
-          }
-        });
-      });
+      interface NavItem {
+        title: string;
+        icon?: any; // You might want to specify a more specific type for icons
+        url?: string;
+        items: SubItem[];
+      }
+
+      interface NavSection {
+        label?: string;
+        items: NavItem[];
+      }
     });
-  }, [pathname]);
+  }, [pathname, NAV_DATA]);
 
   return (
     <>
@@ -102,13 +127,14 @@ export function Sidebar({NAV_DATA}: { NAV_DATA: any[] }) {
 
                 <nav role="navigation" aria-label={section.label}>
                   <ul className="space-y-2">
-                    {section.items.map((item, itemIndex) => (
+
+                    {section.items.map((item: NavItem, itemIndex: number) => (
                       <li key={`${item.title}-${itemIndex}`}>
                         {item.items.length ? (
                           <div>
                             <MenuItem
                               isActive={item.items.some(
-                                ({ url }) => url === pathname,
+                                ({ url }: SubItem) => url === pathname,
                               )}
                               onClick={() => toggleExpanded(item.title)}
                             >
@@ -137,7 +163,7 @@ export function Sidebar({NAV_DATA}: { NAV_DATA: any[] }) {
                                 className="ml-9 mr-0 space-y-1.5 pb-[15px] pr-0 pt-2"
                                 role="menu"
                               >
-                                {item.items.map((subItem) => (
+                                {item.items.map((subItem: SubItem) => (
                                   <li key={subItem.title} role="none">
                                     <MenuItem
                                       as="link"
@@ -153,7 +179,7 @@ export function Sidebar({NAV_DATA}: { NAV_DATA: any[] }) {
                           </div>
                         ) : (
                           (() => {
-                            const href =
+                            const href: string =
                               "url" in item
                                 ? item.url + ""
                                 : "/" +

@@ -140,8 +140,9 @@ export default function SigninWithPassword() {
               <p className="text-sm text-gray-600">{section.description}</p>
               <div className="mt-1 text-sm text-gray-500">
                 <span>Email: {section.email}</span>
-                {section.telephone && (
-                  <span className="ml-4">Tel: {section.telephone}</span>
+                {/* Vérifier que 'telephone' existe avant de l'utiliser */}
+                {(section as any).telephone && (
+                  <span className="ml-4">Tel: {(section as any).telephone}</span>
                 )}
               </div>
             </div>

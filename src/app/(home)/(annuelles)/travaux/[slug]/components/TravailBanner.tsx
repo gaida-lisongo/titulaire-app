@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { FileText, Calendar, Users, Search } from 'lucide-react'
+import { useState } from 'react'
 import { useTravauxContext } from '../../contexts/TravauxContext'
 
 interface TravailBannerProps {
@@ -7,7 +8,8 @@ interface TravailBannerProps {
 }
 
 export function TravailBanner({ slug }: TravailBannerProps) {
-  const { travaux, searchQuery, setSearchQuery } = useTravauxContext()
+  const { travaux } = useTravauxContext()
+  const [searchQuery, setSearchQuery] = useState('') // Utiliser un état local à la place
 
   return (
     <div className="relative h-80 rounded-2xl overflow-hidden">

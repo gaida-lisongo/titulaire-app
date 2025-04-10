@@ -14,9 +14,17 @@ interface QcmModalProps {
   totalQuestions: number
 }
 
+// Modifier l'interface Question localement pour garantir que enonce est toujours une chaîne
+interface QcmQuestion {
+  enonce: string; // Toujours une chaîne, pas undefined
+  type: 'QCM';
+  choix: string[];
+  reponse: string;
+}
+
 export function QcmModal({ isOpen, onClose, onSave, totalQuestions }: QcmModalProps) {
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [currentQuestion, setCurrentQuestion] = useState<Question>({
+  const [questions, setQuestions] = useState<QcmQuestion[]>([])
+  const [currentQuestion, setCurrentQuestion] = useState<QcmQuestion>({
     enonce: '',
     type: 'QCM',
     choix: Array(7).fill(''),
@@ -56,6 +64,11 @@ export function QcmModal({ isOpen, onClose, onSave, totalQuestions }: QcmModalPr
       reponse: index.toString()
     }))
   }
+
+  // Fonction qui convertit QcmQuestion[] en Question[] pour la sauvegarde
+  const handleSave = () => {
+    onSave(questions as unknown as Question[]);
+  };
 
   if (!isOpen) return null
 
@@ -160,7 +173,7 @@ export function QcmModal({ isOpen, onClose, onSave, totalQuestions }: QcmModalPr
               </button>
               
               <button
-                onClick={() => onSave(questions)}
+                onClick={handleSave}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 <Save size={20} />

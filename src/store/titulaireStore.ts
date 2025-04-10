@@ -59,7 +59,7 @@ export const useTitulaireStore = create<TitulaireState>()(
 
 
           // Attendre toutes les promesses pour chaque item
-          await Promise.all(items.map(async (item) => {
+          await Promise.all(items.map(async (item : any) => {
             const repsdata = await titulaireService.getAnneeAcademique(item.anneeId._id)
             const anneeData = repsdata.data
 
@@ -70,30 +70,27 @@ export const useTitulaireStore = create<TitulaireState>()(
                     url: `/travaux/${charges._id}_${item.anneeId._id}`
                 }
             ]
-
-            lecons = [
-                ...lecons,
-                {
-                    title: `Lecon ${anneeData.fin}`,
-                    url: `/lecons/${charges._id}_${item.anneeId._id}`
-                }
-            ]
-            examens = [
-                ...examens,
-                {
-                    title: `Examen ${anneeData.fin}`,
-                    url: `/examens/${charges._id}_${item.anneeId._id}`
-                }
-            ]
-
-
-            rattrapages = [
-                ...rattrapages,
-                {
-                    title: `Rattrapage ${anneeData.fin}`,
-                    url: `/rattrapages/${charges._id}_${item.anneeId._id}`
-                }
-            ]            
+            // lecons = [
+            //     ...lecons,
+            //     {
+            //         title: `Lecon ${anneeData.fin}`,
+            //         url: `/lecons/${charges._id}_${item.anneeId._id}`
+            //     }
+            // ]
+            // examens = [
+            //     ...examens,
+            //     {
+            //         title: `Examen ${anneeData.fin}`,
+            //         url: `/examens/${charges._id}_${item.anneeId._id}`
+            //     }
+            // ]
+            // rattrapages = [
+            //     ...rattrapages,
+            //     {
+            //         title: `Rattrapage ${anneeData.fin}`,
+            //         url: `/rattrapages/${charges._id}_${item.anneeId._id}`
+            //     }
+            // ]            
 
             menuItem.items = [
               {
@@ -101,21 +98,21 @@ export const useTitulaireStore = create<TitulaireState>()(
                 icon: faClipboardList,
                 items: travaux
               },
-              {
-                title: 'Lecons',
-                icon: faBookOpen,
-                items: lecons
-              },
-              {
-                title: 'Examens',
-                icon: faTrophy,
-                items: examens
-              },
-              {
-                title: 'Rattrapages',
-                icon: faUserPlus,
-                items: rattrapages
-              }
+              // {
+              //   title: 'Lecons',
+              //   icon: faBookOpen,
+              //   items: lecons
+              // },
+              // {
+              //   title: 'Examens',
+              //   icon: faTrophy,
+              //   items: examens
+              // },
+              // {
+              //   title: 'Rattrapages',
+              //   icon: faUserPlus,
+              //   items: rattrapages
+              // }
             ]
           }))
 

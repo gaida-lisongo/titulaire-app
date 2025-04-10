@@ -3,8 +3,8 @@ export type TravailStatus = 'EN ATTENTE' | 'EN COURS' | 'TERMINE'
 
 export interface Question {
   _id?: string
-  enonce: string
-  type: 'QCM' | 'LIBRE' | 'FICHIER'
+  enonce?: string
+  type?: 'QCM' | 'LIBRE' | 'FICHIER'
   choix?: string[]
   reponse?: string
   url?: string

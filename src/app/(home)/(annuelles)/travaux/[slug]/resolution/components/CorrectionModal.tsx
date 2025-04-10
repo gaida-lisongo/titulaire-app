@@ -58,7 +58,7 @@ export function CorrectionModal({
               <h3 className="font-medium mb-2">Question {index + 1}</h3>
               <div 
                 className="prose max-w-none mb-4" 
-                dangerouslySetInnerHTML={{ __html: question.enonce }} 
+                dangerouslySetInnerHTML={{ __html: question.enonce || '' }} 
               />
               <div className="bg-white p-4 rounded-lg shadow-sm">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">
