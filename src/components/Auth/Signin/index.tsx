@@ -1,31 +1,33 @@
+"use client";
 import Link from "next/link";
 import GoogleSigninButton from "../GoogleSigninButton";
 import SigninWithPassword from "../SigninWithPassword";
+// Modifier l'import du router
+import { useRouter, useSearchParams } from "next/navigation"; // Utiliser next/navigation au lieu de next/router
+import { useAuthStore } from "@/store/useAuthStore";
+import { useEffect } from "react";
 
 export default function Signin() {
+  const router = useRouter();
+  // Utiliser useSearchParams hook au lieu de new URLSearchParams()
+  const searchParams = useSearchParams();
+  const { isAuthenticated } = useAuthStore();
+
+  // Récupérer le callbackUrl s'il existe
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  
+  useEffect(() => {
+    // Si l'utilisateur est déjà authentifié, le rediriger
+    if (isAuthenticated) {
+      router.push(decodeURI(callbackUrl));
+    }
+  }, [isAuthenticated, router, callbackUrl]);
+
   return (
     <>
-      <GoogleSigninButton text="Sign in" />
-
-      <div className="my-6 flex items-center justify-center">
-        <span className="block h-px w-full bg-stroke dark:bg-dark-3"></span>
-        <div className="block w-full min-w-fit bg-white px-3 text-center font-medium dark:bg-gray-dark">
-          Or sign in with email
-        </div>
-        <span className="block h-px w-full bg-stroke dark:bg-dark-3"></span>
-      </div>
 
       <div>
         <SigninWithPassword />
-      </div>
-
-      <div className="mt-6 text-center">
-        <p>
-          Don’t have any account?{" "}
-          <Link href="/auth/sign-up" className="text-primary">
-            Sign Up
-          </Link>
-        </p>
       </div>
     </>
   );

@@ -1,8 +1,7 @@
-import Signin from "@/components/Auth/Signin";
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
+import { Suspense } from "react";
+import ClientSignin from "./components/ClientSignin"; // Importer un composant client
 
 export const metadata: Metadata = {
   title: "Connectez-vous à votre compte",
@@ -11,60 +10,68 @@ export const metadata: Metadata = {
 
 export default function SignIn() {
   return (
-    <>
-
-      <div className="rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <div className="flex flex-wrap items-center">
-          <div className="w-full xl:w-1/2">
-            <div className="w-full p-4 sm:p-12.5 xl:p-15">
-              <Signin />
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="rounded-lg bg-white shadow-md overflow-hidden">
+        <div className="flex flex-wrap">
+          {/* Colonne de gauche - Formulaire de connexion */}
+          <div className="w-full lg:w-1/2">
+            <div className="p-6 md:p-8 lg:p-10">
+              <Suspense fallback={<div className="text-center py-10">Chargement...</div>}>
+                <ClientSignin />
+              </Suspense>
             </div>
           </div>
 
-          <div className="hidden w-full p-7.5 xl:block xl:w-1/2">
-            <div className="custom-gradient-1 overflow-hidden rounded-2xl px-12.5 pt-12.5 dark:!bg-dark-2 dark:bg-none">
-              <Link className="mb-10 inline-block" href="/">
-                <Image
-                  className="hidden dark:block"
-                  src={"/images/logo/logo.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                />
-                <Image
-                  className="dark:hidden"
-                  src={"/images/logo/logo-dark.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                />
-              </Link>
-              <p className="mb-3 text-xl font-medium text-dark dark:text-white">
-                Sign in to your account
-              </p>
-
-              <h1 className="mb-4 text-2xl font-bold text-dark dark:text-white sm:text-heading-3">
-                Welcome Back!
-              </h1>
-
-              <p className="w-full max-w-[375px] font-medium text-dark-4 dark:text-dark-6">
-                Please sign in to your account by completing the necessary
-                fields below
-              </p>
-
-              <div className="mt-31">
-                <Image
-                  src={"/images/grids/grid-02.svg"}
-                  alt="Logo"
-                  width={405}
-                  height={325}
-                  className="mx-auto dark:opacity-30"
-                />
+          {/* Colonne de droite - Image et texte */}
+          <div className="hidden lg:block lg:w-1/2">
+            <div className="relative h-full min-h-[500px]">
+              {/* Image de fond */}
+              <Image
+                src="/images/banner/admin-inbtp.jpeg"
+                alt="Plateforme enseignants INBTP"
+                fill
+                className="object-cover"
+                priority
+              />
+              
+              {/* Overlay pour améliorer la lisibilité */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
+              
+              {/* Contenu informatif */}
+              <div className="relative z-10 flex flex-col justify-end h-full p-8 text-white">
+                <h2 className="text-2xl font-bold mb-3">
+                  Plateforme des Enseignants INBTP
+                </h2>
+                
+                <p className="mb-4 text-gray-100">
+                  Un outil complet pour gérer efficacement vos cours et évaluations
+                </p>
+                
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center">
+                    <svg className="mr-2 h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm">Créez et gérez des travaux interactifs</span>
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="mr-2 h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm">Évaluez les soumissions des étudiants</span>
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="mr-2 h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm">Suivez les performances académiques</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

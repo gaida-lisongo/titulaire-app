@@ -95,9 +95,13 @@ export default function SigninWithPassword() {
           agent: response.data.agent,
           token: response.data.token
         });
+      
+        // Récupérer l'URL de rappel des paramètres de recherche
+        const searchParams = new URLSearchParams(window.location.search);
+        const callbackUrl = searchParams.get('callbackUrl') || '/';
         
-        // Redirection vers la page d'accueil
-        router.push('/');
+        // Redirection vers la page demandée ou la page d'accueil
+        router.push(decodeURI(callbackUrl));
       } else {
         setError("Code OTP invalide");
       }
