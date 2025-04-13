@@ -1,50 +1,67 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   // Obtenir le token depuis les cookies
-  const token = request.cookies.get('auth-token')?.value
-
+  const token = request.cookies.get('auth-token')?.value;
+  
   // Chemin de la requête actuelle
-  const { pathname } = request.nextUrl
-
+  const { pathname } = request.nextUrl;
+  
+  console.log('Middleware running on path:', pathname);
+  
   // Chemins publics qui ne nécessitent pas d'authentification
   const publicPaths = [
-    '/auth'
-  ]
-
-  // Vérifier si le chemin actuel est un chemin public
-  const isPathPublic = publicPaths.some(path => pathname.startsWith(path))
-
-  // Vérifier si la requête contient des ressources statiques
-  const isStaticResource = pathname.match(/\.(jpg|jpeg|png|gif|svg|css|js)$/i)
-
-  // Si l'utilisateur accède à un chemin public ou à une ressource statique, on le laisse passer
-  if (isPathPublic || isStaticResource) {
-    return NextResponse.next()
+    '/auth',  // Ce chemin est accessible publiquement (l'URL réelle, pas le chemin du fichier)
+  ];
+  
+  // Routes à ignorer (API, ressources statiques, etc.)
+  const ignoredRoutes = [
+    '/api/',
+    '/_next/',
+    '/favicon.ico',
+    '/images/',
+    '/fonts/',
+    '/.well-known/'
+  ];
+  
+  // Vérifier si le chemin doit être ignoré
+  const shouldIgnore = ignoredRoutes.some(route => pathname.startsWith(route));
+  if (shouldIgnore) {
+    console.log('Ignoring path:', pathname);
+    return NextResponse.next();
   }
-
+  
+  // Vérifier si le chemin actuel est un chemin public
+  const isPathPublic = publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'));
+  
+  // Si c'est un chemin public, on laisse passer
+  if (isPathPublic) {
+    console.log('Public path detected:', pathname);
+    return NextResponse.next();
+  }
+  
   // Si le token n'existe pas, rediriger vers /auth
   if (!token) {
-    const url = new URL('/auth', request.url)
-    url.searchParams.set('callbackUrl', encodeURI(pathname))
-    return NextResponse.redirect(url)
+    console.log(`Redirecting from ${pathname} to /auth because token is missing`);
+    const url = new URL('/auth', request.url);
+    url.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(url);
   }
-
-  return NextResponse.next()
+  
+  return NextResponse.next();
 }
 
-// Configurer les chemins sur lesquels le middleware s'applique
+// Configurer les chemins sur lesquels le middleware s'applique de façon plus précise
 export const config = {
   matcher: [
     /*
-     * Match all paths except:
+     * Match all request paths except:
      * 1. /api routes
      * 2. /_next (Next.js internals)
-     * 3. /_static (inside /public)
-     * 4. /_vercel (Vercel internals)
-     * 5. Static files (e.g. /favicon.ico, /sitemap.xml, /robots.txt)
+     * 3. /images (static files)
+     * 4. All static files with extensions
      */
-    '/((?!api|_next|_static|_vercel|[\\w-]+\\.\\w+).*)',
+    '/((?!api|_next|static|images|.*\\.(?:jpg|jpeg|gif|png|svg|ico|webp|js|css)).*)'
   ],
-}
+};
