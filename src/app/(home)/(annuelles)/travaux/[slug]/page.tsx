@@ -9,6 +9,7 @@ import { QuestionModal } from './components/modals/QuestionModal'
 import { ReponseModal } from './components/modals/ReponseModal'
 import { useTravauxContext } from '../contexts/TravauxContext'
 import type { Travail, Question } from '@/types/travail'
+import { useTitulaireStore } from '@/store/titulaireStore'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -17,13 +18,12 @@ interface PageProps {
 export default function TravauxPage({ params }: PageProps) {
   const resolvedParams = use(params)
   const { travaux, isLoading, error, updateTravail, loadTravaux } = useTravauxContext()
-  
+  const { travaux : travail, setTravaux } = useTitulaireStore()
   const [selectedTravail, setSelectedTravail] = useState<Travail | null>(null)
   const [isQcmModalOpen, setIsQcmModalOpen] = useState(false)
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false)
   const [isReponseModalOpen, setIsReponseModalOpen] = useState(false)
 
-  console.log('Travaux:', travaux)
   useEffect(() => {
     const [matiereId] = resolvedParams.slug.split('_')
     if (matiereId) {
@@ -32,7 +32,6 @@ export default function TravauxPage({ params }: PageProps) {
   }, [resolvedParams.slug, loadTravaux])
 
   const handleEditTravail = (travail: Travail) => {
-    console.log('Selected travail:', travail)
     setSelectedTravail(travail)
     switch (travail.type) {
       case 'QCM':
@@ -47,6 +46,9 @@ export default function TravauxPage({ params }: PageProps) {
     }
   }
 
+  useEffect(() => {
+    console.log('Selected travail:', travail)
+  }, [])
   // Extraire matiereId et anneeId du slug
   const [matiereId, anneeId] = resolvedParams.slug.split('_')
 
@@ -60,7 +62,7 @@ export default function TravauxPage({ params }: PageProps) {
 
   return (
     <div className="space-y-8">
-      <TravailBanner slug={resolvedParams.slug} />
+      {travail && <TravailBanner slug={resolvedParams.slug} info={travail} />}
 
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-8">

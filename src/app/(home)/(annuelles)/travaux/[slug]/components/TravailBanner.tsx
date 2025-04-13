@@ -1,16 +1,35 @@
 import Image from 'next/image'
 import { FileText, Calendar, Users, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTravauxContext } from '../../contexts/TravauxContext'
+import { BannerTravail } from '@/types/travail'
+import { useTitulaireStore } from '@/store/titulaireStore'
 
 interface TravailBannerProps {
   slug: string
+  info: BannerTravail
 }
 
-export function TravailBanner({ slug }: TravailBannerProps) {
+export function TravailBanner({ slug, info}: TravailBannerProps) {
   const { travaux } = useTravauxContext()
   const [searchQuery, setSearchQuery] = useState('') // Utiliser un état local à la place
+  const { updateTravaux } = useTitulaireStore();
 
+  useEffect(() => {
+    console.log('Travaux:', travaux) 
+    const totalQcm = travaux.filter((travail) => travail.type === 'QCM').length
+    const totalQuestion = travaux.filter((travail) => travail.type === 'QUESTION').length
+    const totalReponse = travaux.filter((travail) => travail.type === 'REPONSE').length
+
+    const updateInfo = {
+      ...info,
+      qcm: totalQcm,
+      question: totalQuestion,
+      reponse: totalReponse,
+    }
+
+    updateTravaux(updateInfo)
+  }, [])
   return (
     <div className="relative h-80 rounded-2xl overflow-hidden">
       {/* Image de fond avec overlay */}
@@ -26,21 +45,21 @@ export function TravailBanner({ slug }: TravailBannerProps) {
           {/* En-tête avec titre et stats */}
           <div>
             <h1 className="text-4xl font-bold text-white mb-4">
-              Informatique - Année 2024
+              {info.title} - {info.description}
             </h1>
             
             <div className="flex gap-8">
               <div className="flex items-center gap-2 text-white/90">
                 <FileText className="w-5 h-5" />
-                <span>{travaux.length} Travaux</span>
+                <span>{info.qcm} QCM</span>
               </div>
               <div className="flex items-center gap-2 text-white/90">
                 <Calendar className="w-5 h-5" />
-                <span>2023-2024</span>
+                <span>{info.question} QUESTION</span>
               </div>
               <div className="flex items-center gap-2 text-white/90">
                 <Users className="w-5 h-5" />
-                <span>45 Étudiants</span>
+                <span>{info.reponse} REPONSE</span>
               </div>
             </div>
           </div>

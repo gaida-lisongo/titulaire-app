@@ -10,6 +10,7 @@ import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useTitulaireStore } from "@/store/titulaireStore";
 
 interface SubItem {
   title: string;
@@ -36,7 +37,7 @@ export function Sidebar({NAV_DATA}: { NAV_DATA: any[] }) {
   const pathname = usePathname();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-
+  const { setTravaux } = useTitulaireStore();
   const toggleExpanded = (title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
 
@@ -164,7 +165,15 @@ export function Sidebar({NAV_DATA}: { NAV_DATA: any[] }) {
                                 role="menu"
                               >
                                 {item.items.map((subItem: SubItem) => (
-                                  <li key={subItem.title} role="none">
+                                  <li key={subItem.title} role="none" onClick={() =>{
+                                     const bannerData = {
+                                      title: section.label,
+                                      description: subItem.title,
+                                     }
+
+                                     console.log(bannerData)
+                                     setTravaux(bannerData)
+                                  }}>
                                     <MenuItem
                                       as="link"
                                       href={subItem.url}

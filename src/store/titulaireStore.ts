@@ -9,6 +9,7 @@ import {
   faUserPlus,
 } from '@fortawesome/free-solid-svg-icons'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { BannerTravail } from '@/types/travail'
 
 interface NavItem {
   title: string
@@ -25,18 +26,22 @@ interface NavSection {
 
 interface TitulaireState {
   chargesHoraire: any[]
+  travaux: BannerTravail | null
   navData: NavSection[]
   isLoading: boolean
   error: string | null
   fetchChargesHoraire: (titulaireId: string) => Promise<void>
   resetError: () => void
   buildNavigation: () => void
+  setTravaux: (data: BannerTravail) => void
+  updateTravaux: (travail: BannerTravail) => void
 }
 
 export const useTitulaireStore = create<TitulaireState>()(
   persist(
     (set, get) => ({
       chargesHoraire: [],
+      travaux: null,
       navData: [],
       isLoading: false,
       error: null,
@@ -149,6 +154,19 @@ export const useTitulaireStore = create<TitulaireState>()(
             isLoading: false 
           })
         }
+      },
+
+      setTravaux: (data: BannerTravail) => {
+        set({ travaux: data })
+      },
+
+      updateTravaux: (travail: BannerTravail) => {
+        set((state) => ({
+          travaux: {
+            ...state.travaux,
+            ...travail
+          }
+        }))
       },
 
       resetError: () => set({ error: null })

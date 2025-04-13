@@ -52,3 +52,11 @@ export interface Reponse {
     contenu: string
   }[]
 }
+
+export interface BannerTravail {
+  title: string,
+  description: string,
+  qcm?: number,
+  question?: number,
+  reponse?: number
+}
