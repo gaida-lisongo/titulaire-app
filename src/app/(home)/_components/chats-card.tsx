@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import sectionService from "@/api/sectionService";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faCheckCircle, faClock } from '@fortawesome/free-solid-svg-icons';
+import { useTitulaireStore } from "@/store/titulaireStore";
 
 interface Retrait {
   _id: string;
@@ -29,33 +30,13 @@ export function RetraitsCard({ className }: { className?: string }) {
     const activeSectionId = state.activeSectionId;
     return sections.find(s => s._id === activeSectionId);
   });
-
-  const [retraits, setRetraits] = useState<Retrait[]>([]);
+  const { soldeTravaux, soldeRetraits, retraits, setSoldeTravaux } = useTitulaireStore();
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchRetraits = async () => {
-      if (!activeSection?._id) return;
-      setLoading(true);
-      try {
-        const response = await sectionService.getRetraitsBySection(activeSection._id);
-        if (response.success) {
-          setRetraits(response.data);
-        }
-      } catch (error) {
-        console.error("Erreur lors du chargement des retraits:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRetraits();
-  }, [activeSection]);
 
   return (
     <div className="col-span-12 rounded-[10px] bg-white py-6 shadow-1 dark:bg-gray-dark dark:shadow-card xl:col-span-4">
       <h2 className="mb-5.5 px-7.5 text-body-2xlg font-bold text-dark dark:text-white flex justify-between items-center">
-        Retraits
+        Commandes {(soldeTravaux ?? 0) - (soldeRetraits ?? 0)} FC
         {loading && <FontAwesomeIcon icon={faSpinner} className="animate-spin text-xl" />}
       </h2>
 

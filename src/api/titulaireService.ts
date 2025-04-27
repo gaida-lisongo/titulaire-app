@@ -51,6 +51,38 @@ class TitulaireService {
         return response.json();
     }
 
+    async getAllTravauxByAuteurId(titulaireId: string) {
+        try {
+            const resp = await fetch(`${api.API}travaux?auteurId=${titulaireId}`);
+
+            const response: any[] = await resp.json();
+                      
+            return response;
+        } catch (error) {
+            console.error("Erreur lors de la récupération des travaux:", error);
+            throw error;                        
+        }
+    }
+
+    async getCommandesByTravailId(travailId: string) {
+        try {
+            const resp = await fetch(`${api.API}travaux/commandes/${travailId}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            const response: ApiResponse<any[]> = await resp.json();
+            if (!resp.ok) {
+                throw new Error(response.message || 'Une erreur est survenue');
+            }
+            return response.data;
+        } catch (error) {
+            console.error("Erreur lors de la récupération des commandes:", error);
+            throw error;            
+        }
+    }
+
     async getAllTravauxByCharge(matiereId: string, auteurId: string) {
         try {
             const resp = await fetch(`${api.API}titulaire/travaux/${matiereId}/${auteurId}`, {
@@ -392,6 +424,47 @@ class TitulaireService {
             return response.data;
         } catch (error) {
             console.error("Erreur lors de la récupération des notes:", error);
+            throw error;            
+        }
+    }
+
+    // Créer un retrait
+    async createRetrait(data: { montant: number, type: string, description: string, agentId: string }) {
+        try {
+            const resp = await fetch(`${api.API}retraits/add`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+            const response = await resp.json();
+            if (!resp.ok) {
+                throw new Error(response.error);
+            }
+            return response.data;
+        } catch (error) {
+            console.error("Erreur lors de la création du retrait:", error);
+            throw error;            
+        }
+    }
+
+    // Obtenir les retraits d'une section
+    async retraitsByAgnetId(agentId: string) {
+        try {
+            const resp = await fetch(`${api.API}retraits/agent/${agentId}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            const response = await resp.json();
+            if (!response.success) {
+                throw new Error(response.error);
+            }
+            return response.stats;
+        } catch (error) {
+            console.error("Erreur lors de la récupération des retraits:", error);
             throw error;            
         }
     }

@@ -16,7 +16,7 @@ export default function AuthLayout({
   const agent = useAuthStore((state) => state.agent);
   const { isAuthenticated } = useRequireAuth()
   const { fetchChargesHoraire, navData, isLoading } = useTitulaireStore()
-  console.log("Agent: ", navData)
+
 
   useEffect(() => {
     if (agent?.id) {

@@ -10,6 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { BannerTravail } from '@/types/travail'
+import { tr } from 'date-fns/locale'
 
 interface NavItem {
   title: string
@@ -24,13 +25,70 @@ interface NavSection {
   items: NavItem[]
 }
 
+interface Commande {
+  _id: string;
+  date_created: string;
+  product: string;
+  montant: number;
+  ref: string;
+  statut: string;
+  title: string;
+  description: string;
+  monnaie: string;
+  etudiant: {
+    infoPerso: {
+      nom: string;
+      prenom: string;
+      postnom: string;
+    };
+    infoSec: {
+      email: string;
+      telephone: string;
+    };
+    _id: string;
+  };
+  [key: string]: any; // Pour d'autres propriétés dynamiques
+}
+
+interface Retrait {
+  _id: string;
+  montant: number;
+  type: string;
+  statut: 'completed' | 'pending';
+  date_created: string;
+  agentId: {
+    nom: string;
+    prenom: string;
+    email: string;
+    _id: string;
+  };
+}
+
+interface Transaction {
+  travailId: string
+  commandes: Commande[]
+  total: number
+}
+
 interface TitulaireState {
   chargesHoraire: any[]
   travaux: BannerTravail | null
+  soldeTravaux: number | null
+  transactions: Transaction[]
+  selectedTravail: string | null
+  soldeRetraits: number | null
+  retraits: Retrait[]
   navData: NavSection[]
   isLoading: boolean
   error: string | null
+  setSelectedTravail: (travailId: string) => void
+  setSoldeRetraits: (solde: number) => void
+  setTransactions: (transactions: Transaction[]) => void
+  setSoldeTravaux: (solde: number) => void
+  fetchCommandes: (titulaireId: string) => Promise<Commande[]>
   fetchChargesHoraire: (titulaireId: string) => Promise<void>
+  fetchRetraits: (titulaireId: string) => Promise<void>
+  setRetraits: (retraits: Retrait[]) => void
   resetError: () => void
   buildNavigation: () => void
   setTravaux: (data: BannerTravail) => void
@@ -42,10 +100,92 @@ export const useTitulaireStore = create<TitulaireState>()(
     (set, get) => ({
       chargesHoraire: [],
       travaux: null,
+      selectedTravail: null,
+      soldeRetraits: null,
+      transactions: [],
+      retraits: [],
       navData: [],
       isLoading: false,
+      soldeTravaux: null,
       error: null,
+      setSoldeRetraits: (solde) => {
+        set({ soldeRetraits: solde })
+      },
+      setRetraits: (retraits) => {
+        set({ retraits })
+      },
+      fetchRetraits: async (titulaireId: string) => { 
+        try {
+          set({ error: null })
+          const resp = await titulaireService.retraitsByAgnetId(titulaireId)
+          set({ soldeRetraits: resp.global.totalAmount })
+          set({ retraits: resp.recent })
+        } catch (error) {
+          set({ 
+            error: error instanceof Error ? error.message : "Une erreur est survenue", 
+            isLoading: false 
+          })
+        }
+      },
 
+      setSoldeTravaux(solde) {
+        set({ soldeTravaux: solde })
+      },
+      setSelectedTravail(travailId) {
+        set({ selectedTravail: travailId })
+      },
+      setTransactions(transactions) {
+        set({ transactions })
+      },
+      fetchCommandes: async (travailId) => {
+        try {
+          set({ error: null })
+          const resp = await titulaireService.getCommandesByTravailId(travailId)
+          console.log("Commandes:", resp)
+          let commandesData : Commande[] = [];
+
+          resp.forEach((commande: Commande) => {
+            // S'assurer que commande.ref n'est pas en double
+            if (!commande.etudiant) return; // Ignorer si etudiant est null ou undefined
+            if (commandesData) {
+              if (!commandesData.some((c: Commande) => c.etudiant._id === commande.etudiant._id)) {
+                commandesData.push(commande);
+              }
+            }
+
+          })
+
+          if (commandesData.length > 0) {
+            let soldes = 0;
+            commandesData.forEach((commande: Commande) => {
+              if (commande.statut == 'completed') { 
+                const existingTransaction = get().transactions.find((transaction) => transaction.travailId === travailId)      
+                
+                if (!existingTransaction) {
+                  soldes += commande.montant * 0.8 * commandesData.length
+                  set((state) => ({
+                    transactions: [
+                      ...state.transactions,
+                      {
+                        travailId,
+                        commandes: [commande],
+                        total: commande.montant 
+                      }
+                    ]
+                  }))
+                }
+              }
+            })
+            set({ soldeTravaux: (get().soldeTravaux || 0) + soldes })
+          }
+          return commandesData
+        } catch (error) {
+          set({ 
+            error: error instanceof Error ? error.message : "Une erreur est survenue", 
+          })
+          return []
+        }
+      },
       buildNavigation: async () => {
         const { chargesHoraire } = get()
         let customMenu: NavSection[] = []
@@ -155,6 +295,8 @@ export const useTitulaireStore = create<TitulaireState>()(
           })
         }
       },
+
+
 
       setTravaux: (data: BannerTravail) => {
         set({ travaux: data })

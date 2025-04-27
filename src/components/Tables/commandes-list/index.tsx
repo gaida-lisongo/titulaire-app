@@ -4,12 +4,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { standardFormat } from "@/lib/format-number";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, se } from "date-fns/locale";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileAlt, faGraduationCap, faSpinner, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { usePromotionStore } from "@/store/usePromotionStore";
 import { useSectionStore } from "@/store/useSectionStore";
 import sectionService from "@/api/sectionService";
+import titulaireService from "@/api/titulaireService";
+import { useAuthStore } from "@/store/useAuthStore";
+import { DropdownTravaux } from "./dropdown";
+import { useTitulaireStore } from "@/store/titulaireStore";
 
 interface Commande {
   _id: string;
@@ -17,6 +21,23 @@ interface Commande {
   product: string;
   montant: number;
   ref: string;
+  statut: string;
+  title: string;
+  description: string;
+  monnaie: string;
+  etudiant: {
+    infoPerso: {
+      nom: string;
+      prenom: string;
+      postnom: string;
+    };
+    infoSec: {
+      email: string;
+      telephone: string;
+    };
+    _id: string;
+  };
+  [key: string]: any; // Pour d'autres propriétés dynamiques
 }
 
 export function CommandesList({ className }: { className?: string }) {
@@ -25,37 +46,73 @@ export function CommandesList({ className }: { className?: string }) {
     const activeSectionId = state.activeSectionId;
     return sections.find(s => s._id === activeSectionId);
   });
-  
+  const { agent } = useAuthStore();
   const { promotions, fetchPromotions } = usePromotionStore();
+  const { fetchCommandes, soldeTravaux } = useTitulaireStore();
   const [selectedPromotion, setSelectedPromotion] = useState<string>("");
+  const [selectedTravail, setSelectedTravail] = useState<string | null>(null);
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [loading, setLoading] = useState(false);
+  const [allTravaux, setAllTravaux] = useState<{
+    _id: string;
+    titre: string;
+    montant: number;
+    type: string;
+  }[]>([]);
+  const { getAllTravauxByAuteurId } = titulaireService;
 
   useEffect(() => {
-    if (activeSection?._id) {
+    const fetchTravaux = async () => {
+      if (!agent?.id) return;
+      const request = await getAllTravauxByAuteurId(agent.id);
+
+      const travaux = request.map((travail: any) => ({
+          _id: travail._id,
+          titre: travail.titre,
+          montant: travail.montant,
+          type: travail.type
+        })
+      ) 
+      setAllTravaux(travaux);
+      setSelectedTravail(travaux[0]?._id || null);
+    }
+
+    fetchTravaux();
+  }, []);
+
+  useEffect(() => {
+    if (activeSection?._id) { 
       fetchPromotions(activeSection._id);
     }
   }, [activeSection, fetchPromotions]);
 
   useEffect(() => {
-    const fetchCommandes = async () => {
-      if (!selectedPromotion) return;
-      console.log("Fetching commandes for promotion:", selectedPromotion);
+    const fetchData = async () => {
+      if (!selectedTravail) return;
+      
       setLoading(true);
       try {
-        const response = await sectionService.getCommandesByPromotion(selectedPromotion);
-        if (response.success) {
-          setCommandes(response.data);
-        }
+        let response;
+        
+        // Si un travail spécifique est sélectionné
+        if (selectedTravail) {
+          response = await fetchCommandes(selectedTravail);
+          
+          if (response) {
+            setCommandes(response);
+          } else {
+            console.error("Erreur lors de la récupération des commandes:", response);
+          }
+        } 
       } catch (error) {
         console.error("Erreur lors du chargement des commandes:", error);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchCommandes();
-  }, [selectedPromotion]);
+    
+    fetchData();
+  }, [selectedPromotion, selectedTravail]);
 
   const getProductColor = (product: string) => {
     return product.toLowerCase().includes('tp') 
@@ -68,6 +125,21 @@ export function CommandesList({ className }: { className?: string }) {
       ? faFileAlt 
       : faGraduationCap;
   };
+
+  // Gestion de la réinitialisation des filtres
+  const handleReset = () => {
+    setSelectedPromotion("");
+    setSelectedTravail(null);
+    setCommandes([]);
+  };
+
+  if (!allTravaux) {
+    return (
+      <div className="flex h-60 items-center justify-center">
+        <FontAwesomeIcon icon={faSpinner} className="animate-spin text-3xl text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className={cn(
@@ -84,22 +156,24 @@ export function CommandesList({ className }: { className?: string }) {
           </p>
         </div>
 
-        <div className="relative flex w-full max-w-[300px]">
-          <select
-            value={selectedPromotion}
-            onChange={(e) => setSelectedPromotion(e.target.value)}
-            className="w-full rounded-lg border-[1.5px] border-stroke bg-transparent py-2 pl-4 pr-10 outline-none focus:border-primary dark:border-dark-3 dark:text-white dark:focus:border-primary"
-          >
-            <option value="">Toutes les promotions</option>
-            {promotions.map((promotion) => (
-              <option key={promotion._id} value={promotion._id}>
-                {promotion.niveau}
-              </option>
-            ))}
-          </select>
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <FontAwesomeIcon icon={faSearch} className="size-4" />
-          </span>
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Dropdown pour les types de travaux */}
+          <DropdownTravaux
+            allTravaux={allTravaux}
+            selectedTravail={selectedTravail}
+            onSelect={setSelectedTravail}
+            className="w-full sm:w-[250px]"
+          />
+          
+          {/* Bouton de réinitialisation */}
+          {(selectedPromotion || selectedTravail) && (
+            <button
+              onClick={handleReset}
+              className="text-sm text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-white"
+            >
+              Réinitialiser les filtres
+            </button>
+          )}
         </div>
       </div>
 
@@ -113,18 +187,22 @@ export function CommandesList({ className }: { className?: string }) {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-2 dark:bg-meta-4 [&>th]:!py-4 [&>th]:!font-semibold">
-                  <TableHead className="min-w-[150px]">Date</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead className="min-w-[120px]">Date</TableHead>
+                  <TableHead className="min-w-[120px]">Étudiant</TableHead>
+                  <TableHead className="min-w-[180px]">Titre</TableHead>
+                  <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Montant</TableHead>
-                  <TableHead className="text-center">Référence</TableHead>
+                  <TableHead className="text-center min-w-[120px]">Référence</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {commandes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-40 text-center text-gray-500">
-                      Aucune commande trouvée
+                    <TableCell colSpan={6} className="h-40 text-center text-gray-500">
+                      {selectedPromotion || selectedTravail ? 
+                        "Aucune commande trouvée pour les critères sélectionnés" : 
+                        "Sélectionnez une promotion ou un type de travail pour afficher les commandes"}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -137,20 +215,33 @@ export function CommandesList({ className }: { className?: string }) {
                         {format(new Date(commande.date_created), 'PPP', { locale: fr })}
                       </TableCell>
                       <TableCell>
+                        {
+                          commande.etudiant && 
+                          <div className="flex flex-col">
+                            <span className="font-medium">{commande.etudiant.infoPerso.nom} {commande.etudiant.infoPerso.postnom}</span>
+                            <span className="text-xs text-gray-500">{commande.etudiant.infoSec.email}</span>
+                          </div>
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium">{commande.title}</span>
+                      </TableCell>
+                      <TableCell>
                         <span className={cn(
-                          "inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-medium",
-                          getProductColor(commande.product)
+                          "inline-block rounded-full px-2.5 py-1 text-xs font-medium",
+                          commande.statut === "completed" ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" :
+                          commande.statut === "pending" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400" :
+                          "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
                         )}>
-                          <FontAwesomeIcon icon={getProductIcon(commande.product)} className="size-4" />
-                          {commande.product}
+                          {commande.statut}
                         </span>
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {standardFormat(commande.montant)} FC
+                        {standardFormat(commande.montant)} {commande.monnaie}
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="inline-block rounded-full bg-gray-2 px-3 py-1 text-sm font-medium dark:bg-meta-4">
-                          {commande.ref}
+                        <span className="inline-block rounded-full bg-gray-2 px-3 py-1 text-xs font-medium dark:bg-meta-4 truncate max-w-[150px]" title={commande.ref}>
+                          {commande.ref.split("-")[2]}
                         </span>
                       </TableCell>
                     </TableRow>
@@ -160,14 +251,16 @@ export function CommandesList({ className }: { className?: string }) {
             </Table>
           </div>
           
-          <div className="mt-4 flex justify-between items-center text-sm text-gray-500">
-            <span>
-              Total: {standardFormat(commandes.reduce((sum, cmd) => sum + cmd.montant, 0))} FC
-            </span>
-            <span>
-              {commandes.length} résultat(s)
-            </span>
-          </div>
+          {commandes.length > 0 && (
+            <div className="mt-4 flex justify-between items-center text-sm text-gray-500">
+              <span>
+                Total: {standardFormat(commandes.reduce((sum, cmd) => sum + cmd.montant, 0))} FC
+              </span>
+              <span>
+                {commandes.length} résultat(s)
+              </span>
+            </div>
+          )}
         </>
       )}
     </div>
