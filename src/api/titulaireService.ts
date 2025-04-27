@@ -442,7 +442,7 @@ class TitulaireService {
             if (!resp.ok) {
                 throw new Error(response.error);
             }
-            return response.data;
+            return response;
         } catch (error) {
             console.error("Erreur lors de la création du retrait:", error);
             throw error;            

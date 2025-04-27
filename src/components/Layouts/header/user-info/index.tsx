@@ -88,12 +88,13 @@ export function UserInfo() {
       }
       try {
         const response = await createRetrait(payload)
-        if (response) {
+        console.log("Response created retrait:", response);
+        if (response.success) {
           // Rafraîchir les retraits et fermer la modal
           await fetchRetraits(agent.id);
 
-          window.alert("Retrait effectué avec succès");
-          window.location.reload();
+          // window.alert("Retrait effectué avec succès");
+          // window.location.reload();
         } 
       } catch (error) {
         console.error("Erreur lors du retrait:", error);
